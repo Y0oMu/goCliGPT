@@ -1,0 +1,13 @@
+{
+    "ChatGPT": {
+        "api_url": "https://api.openai.com/v1/engines/davinci-codex/completions",
+        "api_key": "your_chatgpt_api_key_here",
+        "model_name": ""
+    },
+
+    "Qwen": {
+        "api_url": "https://dashscope.aliyuncs.com/api/v1/services/aigc/text-generation/generation",
+        "api_key": "your_qwen_api_key_here",
+        "model_name": "qwen-turbo"
+    }
+}
