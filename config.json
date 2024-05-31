@@ -1,8 +1,8 @@
 {
     "ChatGPT": {
-        "api_url": "https://api.openai.com/v1/engines/davinci-codex/completions",
+        "api_url": "https://api.openai.com/v1/completions",
         "api_key": "your_chatgpt_api_key_here",
-        "model_name": ""
+        "model_name": "text-davinci-003"
     },
 
     "Qwen": {

@@ -6,8 +6,28 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+
 	"goCliGPT/config"
 )
+
+type QwenApiRequest struct {
+	Model      string       `json:"model"`
+	Input      QwenInput    `json:"input"`
+	Parameters QwenParams   `json:"parameters"`
+}
+
+type QwenInput struct {
+	Messages []QwenMessage `json:"messages"`
+}
+
+type QwenMessage struct {
+	Role    string `json:"role"`
+	Content string `json:"content"`
+}
+
+type QwenParams struct {
+	ResultFormat string `json:"result_format"`
+}
 
 type QwenApiResponse struct {
 	Output struct {
@@ -21,30 +41,43 @@ type QwenApiResponse struct {
 }
 
 // CallQwenApi function sends input to the Qwen API and gets the response
-func CallQwenApi(input string) string {
+func CallQwenApi(history string) string {
 	url := config.Config.Qwen.ApiUrl
 	method := "POST"
 
-	var jsonStr = []byte(`{
-		"model": "` + config.Config.Qwen.ModelName + `",
-		"input": {
-			"messages": [
-				{"role": "system", "content": "You are a helpful assistant."},
-				{"role": "user", "content": "` + input + `"}
-			]
+	requestBody := QwenApiRequest{
+		Model: config.Config.Qwen.ModelName,
+		Input: QwenInput{
+			Messages: []QwenMessage{
+				{Role: "system", Content: "You are a helpful assistant."},
+			},
 		},
-		"parameters": {
-			"result_format": "message"
-		}
-	}`)
+		Parameters: QwenParams{
+			ResultFormat: "message",
+		},
+	}
+
+	var historyMessages []QwenMessage
+	err := json.Unmarshal([]byte(history), &historyMessages)
+	if err != nil {
+		fmt.Println("History unmarshal error:", err)
+		return "Error in parsing history"
+	}
+	requestBody.Input.Messages = append(requestBody.Input.Messages, historyMessages...)
+
+	jsonData, err := json.Marshal(requestBody)
+	if err != nil {
+		fmt.Println("JSON marshal error:", err)
+		return "Error in creating request body"
+	}
 
 	client := &http.Client{}
-	req, err := http.NewRequest(method, url, bytes.NewBuffer(jsonStr))
+	req, err := http.NewRequest(method, url, bytes.NewBuffer(jsonData))
 	if err != nil {
 		fmt.Println("Request error:", err)
 		return ""
 	}
-	req.Header.Add("Authorization", "Bearer " + config.Config.Qwen.ApiKey)
+	req.Header.Add("Authorization", "Bearer "+config.Config.Qwen.ApiKey)
 	req.Header.Add("Content-Type", "application/json")
 
 	res, err := client.Do(req)
@@ -59,6 +92,8 @@ func CallQwenApi(input string) string {
 		fmt.Println("Read body error:", err)
 		return ""
 	}
+
+	//fmt.Println("API Response:", string(body)) // Add this line for debugging
 
 	var apiResponse QwenApiResponse
 	err = json.Unmarshal(body, &apiResponse)
